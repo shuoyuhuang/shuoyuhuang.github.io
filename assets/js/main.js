@@ -1,114 +1,3 @@
-// ===== Particle Background =====
-(function () {
-  const canvas = document.getElementById('particle-canvas');
-  const ctx = canvas.getContext('2d');
-  let particles = [];
-  let animationId;
-  const PARTICLE_COUNT = 80;
-  const CONNECTION_DIST = 150;
-  let mouse = { x: null, y: null };
-
-  function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-
-  function createParticle() {
-    return {
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      vx: (Math.random() - 0.5) * 0.4,
-      vy: (Math.random() - 0.5) * 0.4,
-      size: Math.random() * 2 + 0.5,
-      opacity: Math.random() * 0.5 + 0.1,
-    };
-  }
-
-  function initParticles() {
-    particles = [];
-    for (let i = 0; i < PARTICLE_COUNT; i++) {
-      particles.push(createParticle());
-    }
-  }
-
-  function drawParticles() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    for (let i = 0; i < particles.length; i++) {
-      const p = particles[i];
-
-      // Update position
-      p.x += p.vx;
-      p.y += p.vy;
-
-      // Bounce off edges
-      if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
-      if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
-
-      // Draw particle
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(139, 92, 246, ${p.opacity})`;
-      ctx.fill();
-
-      // Draw connections
-      for (let j = i + 1; j < particles.length; j++) {
-        const p2 = particles[j];
-        const dx = p.x - p2.x;
-        const dy = p.y - p2.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-
-        if (dist < CONNECTION_DIST) {
-          const lineOpacity = (1 - dist / CONNECTION_DIST) * 0.15;
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(p2.x, p2.y);
-          ctx.strokeStyle = `rgba(139, 92, 246, ${lineOpacity})`;
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-        }
-      }
-
-      // Mouse interaction
-      if (mouse.x !== null) {
-        const dx = p.x - mouse.x;
-        const dy = p.y - mouse.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 200) {
-          const lineOpacity = (1 - dist / 200) * 0.3;
-          ctx.beginPath();
-          ctx.moveTo(p.x, p.y);
-          ctx.lineTo(mouse.x, mouse.y);
-          ctx.strokeStyle = `rgba(167, 139, 250, ${lineOpacity})`;
-          ctx.lineWidth = 0.5;
-          ctx.stroke();
-        }
-      }
-    }
-
-    animationId = requestAnimationFrame(drawParticles);
-  }
-
-  window.addEventListener('resize', () => {
-    resize();
-    initParticles();
-  });
-
-  window.addEventListener('mousemove', (e) => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-  });
-
-  window.addEventListener('mouseleave', () => {
-    mouse.x = null;
-    mouse.y = null;
-  });
-
-  resize();
-  initParticles();
-  drawParticles();
-})();
-
 // ===== Navbar Scroll Effect =====
 (function () {
   const navbar = document.getElementById('navbar');
@@ -126,17 +15,19 @@
   const toggle = document.getElementById('nav-toggle');
   const menu = document.getElementById('nav-menu');
 
+  function setOpen(open) {
+    toggle.classList.toggle('active', open);
+    menu.classList.toggle('active', open);
+    toggle.setAttribute('aria-expanded', String(open));
+  }
+
   toggle.addEventListener('click', () => {
-    toggle.classList.toggle('active');
-    menu.classList.toggle('active');
+    setOpen(!menu.classList.contains('active'));
   });
 
   // Close menu on link click
   menu.querySelectorAll('.nav-link').forEach((link) => {
-    link.addEventListener('click', () => {
-      toggle.classList.remove('active');
-      menu.classList.remove('active');
-    });
+    link.addEventListener('click', () => setOpen(false));
   });
 })();
 
@@ -254,77 +145,99 @@
 })();
 
 // ===== Language Toggle (i18n) =====
+// Chinese is the default and lives in index.html; it is snapshotted from the
+// DOM on load. Only English strings are kept here, keyed by data-i18n.
 (function () {
-  const translations = {
-    en: {
-      'nav.about': 'About',
-      'nav.portfolio': 'Portfolio',
-      'nav.aimusic': 'AI Music',
-      'nav.contact': 'Contact',
-      'hero.tagline': 'Composer &middot; Music Producer &middot; Sound Designer',
-      'hero.cta': 'Explore My Music',
-      'about.title': 'About Me',
-      'about.p1': 'I am a music technology student at <strong>Xinghai Conservatory of Music</strong> (星海音乐学院), majoring in Digital Intelligent Music Engineering. My work spans Chinese traditional, pop, electronic, film scoring, and game audio, bridging cultural traditions with cutting-edge technology.',
-      'about.p2': 'Proficient in <strong>Logic Pro</strong> and <strong>Cubase</strong>, I create across genres from guofeng to electronic music. I also work with AI music platforms such as <strong>Suno</strong>, <strong>Udio</strong>, and <strong>Mureka</strong>, and use <strong>TouchDesigner</strong> for audiovisual interactive experiences. My music has been featured in national-level musicals, satellite TV variety shows, theatrical films, and Michelin-starred restaurants. I have also composed for university micro-films, performed with modern ensembles, and produced therapeutic music grounded in traditional Chinese five-tone healing principles.',
-      'about.p3': 'Beyond composing, I run a <strong>Douyin account with 130K followers</strong> and a growing <strong>Xiaohongshu community</strong>, sharing my creative process and connecting with listeners across China.',
-      'portfolio.title': 'Music Portfolio',
-      'track.forest.desc': 'Finalist at MUSICACOUSTICA-HANGZHOU 2024. A musical exploration where future and dreams intertwine, inspired by \u201cZhuangzi\'s Butterfly Dream.\u201d The forest becomes a symbol of this journey, embodying time, life, and transformation.',
-      'track.southern.desc': 'Award-winning entry at the Guangdong-Hong Kong-Macao Music Technology Design Competition. An applied electronic music piece themed around Lingnan dragon boat racing, built on traditional Chinese instruments and water-sound sampling.',
-      'track.summit.desc': 'Composed for the national musical project <em>The Echoes of Silk</em>. The closing song of the musical, blending Chinese traditional style with folk instruments and Western orchestral arrangement.',
-      'track.sparkling.desc': 'An original performance piece for the Sunset Pixel Band, featuring innovative songwriting with a modern ensemble configuration.',
-      'track.together.desc': 'A therapeutic music piece created for people with depression. It symbolizes countless rivers, gentle streams and roaring currents, that converge and diverge, but will one day find their way back to the sea.',
-      'track.along.desc': 'Theme song for the Harbin Institute of Technology (Shenzhen) official micro-film <em>Along the Way</em>. Full soundtrack composition and arrangement with deep involvement in the film\'s sonic narrative.',
-      'track.midnight.desc': 'A modern jazz-folk song revolving around memory, regret, and self-reconciliation.',
-      'track.do.desc': 'Scene music created for the Michelin one-star restaurant <em>Yu &middot; Min Cuisine</em>, inspired by a secluded island of tranquility amid a bustling urban ocean. Incorporates music therapy principles for an elevated dining experience.',
-      'aimusic.title': 'AI Music - Selected',
-      'aimusic.desc': 'These tracks are AI-assisted compositions where I serve as the creative guide. I use AI as a collaborative tool in the loop: helping shape lyrics, melodies, and artistic direction. Each track is further refined through arrangement, mixing, and mastering in professional DAWs.',
-      'contact.title': 'Get in Touch',
-      'footer.copyright': '&copy; 2025 Shuoyu Huang. All rights reserved.',
-    },
-    zh: {
-      'nav.about': '关于',
-      'nav.portfolio': '作品集',
-      'nav.aimusic': 'AI音乐',
-      'nav.contact': '联系',
-      'hero.tagline': '作曲 · 音乐制作人 · 声音设计师',
-      'hero.cta': '探索我的音乐',
-      'about.title': '关于我',
-      'about.p1': '我是<strong>星海音乐学院</strong>音乐科技专业的学生，主修数智音乐工程方向。我的作品涵盖中国传统音乐、流行、电子、影视配乐和游戏音频等领域，致力于将文化传统与前沿技术相融合。',
-      'about.p2': '熟练使用<strong>Logic Pro</strong>和<strong>Cubase</strong>，我的创作横跨国风到电子音乐等多种风格。同时，我也使用<strong>Suno</strong>、<strong>Udio</strong>、<strong>Mureka</strong>等AI音乐平台，以及<strong>TouchDesigner</strong>进行视听交互体验创作。我的音乐曾在国家级音乐剧、卫视综艺节目、院线电影和米其林星级餐厅中呈现。此外，我还为高校微电影作曲、参与现代乐团演出，并基于中国传统五音疗愈理论创作音乐疗愈作品。',
-      'about.p3': '除了作曲，我还运营着一个拥有<strong>13万粉丝的抖音账号</strong>和不断成长的<strong>小红书社区</strong>，分享我的创作过程，与全国各地的听众建立连接。',
-      'portfolio.title': '音乐作品集',
-      'track.forest.desc': '2024杭州国际电子音乐节入围作品。这是一部探索未来与梦境交织的音乐作品，灵感源于\u201c庄周梦蝶\u201d。森林成为这一旅程的象征，蕴含着时间、生命与变幻的意象。',
-      'track.southern.desc': '粤港澳音乐科技大会获奖作品。一部以岭南赛龙舟为主题，以民族乐器与水声采样为主要架构的应用类电子音乐。',
-      'track.summit.desc': '为国家级音乐剧项目<em>《乐响丝绸》</em>而作。音乐剧的最后一首歌曲，以中国传统风格为主，将民族乐器与西方管弦乐编曲相结合。',
-      'track.sparkling.desc': '落日像素乐团的原创演出曲目，以现代新型乐团的配置进行创新型单曲写作。',
-      'track.together.desc': '一首针对抑郁症人群的音乐疗愈作品，象征千万河流，或是潺潺的小溪、或是奔腾的大江，会汇聚又离散，但终将有一天会殊途同归回到大海。',
-      'track.along.desc': '哈尔滨工业大学（深圳）官方微电影<em>《沿途》</em>主题曲，全面负责电影的配乐作曲与编曲，深度参与影片的声音叙事。',
-      'track.midnight.desc': '一首现代爵士民谣歌曲，围绕着回忆、遗憾与自我和解展开。',
-      'track.do.desc': '为米其林一星餐厅<em>《屿·闽菜公馆》</em>创作的场景音乐，灵感来源于繁华的都市海洋之中有一方与世隔绝的静谧岛屿，融入音乐治疗理念，提升用餐体验。',
-      'aimusic.title': 'AI音乐 - 精选',
-      'aimusic.desc': '这些曲目是以我作为创意引导的AI辅助创作作品。我将AI作为协作工具参与创作流程：辅助歌词创作、旋律构思和艺术方向把控。每首曲目都在专业DAW中经过进一步的编曲、混音和母带处理。',
-      'contact.title': '联系方式',
-      'footer.copyright': '&copy; 2025 黄硕羽 版权所有',
-    },
+  const en = {
+    'meta.title': 'Shuoyu Huang | Music Portfolio',
+    'nav.about': 'About',
+    'nav.portfolio': 'Portfolio',
+    'nav.projects': 'Projects',
+    'nav.contact': 'Contact',
+    'skip': 'Skip to content',
+    'social.douyin': 'Douyin',
+    'social.xhs': 'Xiaohongshu',
+    'hero.tagline': 'Composer &middot; Music Producer &middot; Sound Designer',
+    'hero.cta': 'Explore My Music',
+    'about.title': 'About Me',
+    'about.p1': 'I am an undergraduate in Digital Intelligent Music Engineering at <strong>Xinghai Conservatory of Music</strong>, currently interning at <strong>Alibaba\'s Future Life Lab</strong>, where I build evaluation sets and quality standards for AI music models. Previously, as a music &amp; audio operations intern at <strong>Bilibili Vsinger</strong>, I led music planning for the Luo Tianyi &times; Jingdezhen collaboration <em>Moon in the Glaze</em> and worked on virtual-singer album releases, a national tour, and brand partnerships.',
+    'about.p2': 'Proficient in <strong>Logic Pro</strong>, <strong>Cubase</strong>, and leading AI music tools, I compose across guofeng, pop, electronic, and film scoring. My music has been featured in the national musical <em>The Echoes of Silk</em>, theatrical and university films, and a Michelin-starred restaurant, and earned an Excellence Award at the Guangdong-Hong Kong-Macao Music Technology Design Competition and a national Top 15 at MUSICACOUSTICA-HANGZHOU.',
+    'about.p3': 'On Douyin I share my creative process and behind-the-scenes stories as 小猫很想你 and 追忆小猫, with <strong>220K followers</strong> and <strong>80M+ views</strong>.',
+    'projects.title': 'Music Projects',
+    'projects.desc': 'Music products I led or contributed to. Click through to the original release pages.',
+    'portfolio.title': 'Music Portfolio',
+    'track.forest.title': 'Forest <span class="track-cn">《林》</span>',
+    'track.southern.title': 'Southern Water Rhythm <span class="track-cn">《南·水韵间》</span>',
+    'track.summit.title': 'Summit of Light <span class="track-cn">《光明之巅》</span>',
+    'track.together.title': 'Together &amp; Apart <span class="track-cn">《聚散》</span>',
+    'track.along.title': 'Along the Way <span class="track-cn">《沿途》</span>',
+    'track.midnight.title': 'Midnight Bloom <span class="track-cn">《子夜繁花》</span>',
+    'track.forest.desc': 'Finalist at MUSICACOUSTICA-HANGZHOU 2024. A musical exploration where future and dreams intertwine, inspired by “Zhuangzi\'s Butterfly Dream.” The forest becomes a symbol of this journey, embodying time, life, and transformation.',
+    'track.southern.desc': 'Award-winning entry at the Guangdong-Hong Kong-Macao Music Technology Design Competition. An applied electronic music piece themed around Lingnan dragon boat racing, built on traditional Chinese instruments and water-sound sampling.',
+    'track.summit.desc': 'Composed for the national musical project <em>The Echoes of Silk</em>. The closing song of the musical, blending Chinese traditional style with folk instruments and Western orchestral arrangement.',
+    'track.sparkling.desc': 'An original performance piece for the Sunset Pixel Band, featuring innovative songwriting with a modern ensemble configuration.',
+    'track.together.desc': 'A therapeutic music piece created for people with depression. It symbolizes countless rivers, gentle streams and roaring currents, that converge and diverge, but will one day find their way back to the sea.',
+    'track.along.desc': 'Theme song for the Harbin Institute of Technology (Shenzhen) official micro-film <em>Along the Way</em>. Full soundtrack composition and arrangement with deep involvement in the film\'s sonic narrative.',
+    'track.midnight.desc': 'A modern jazz-folk song revolving around memory, regret, and self-reconciliation.',
+    'track.do.desc': 'Scene music created for the Michelin one-star restaurant <em>Yu &middot; Min Cuisine</em>, inspired by a secluded island of tranquility amid a bustling urban ocean. Incorporates music therapy principles for an elevated dining experience.',
+    'project.youzhongyue.title': 'Moon in the Glaze <span class="track-cn">《釉中月》</span>',
+    'project.youzhongyue.meta': '2026.06 &middot; Luo Tianyi &times; Jingdezhen Porcelain Factory',
+    'project.youzhongyue.desc': 'An original song for Luo Tianyi\'s 14th anniversary and the Jingdezhen intangible-heritage project “Porcelain Rhyme.” A moon reflected in the glaze tells of clay kneaded, glazed, painted, and fired over a thousand years. Released alongside a line of co-branded ceramics; 3M+ plays across platforms.',
+    'project.youzhongyue.role': '<strong>Music Planning &middot; Music Producer &middot; Release</strong>Worked with the partner to define the theme and music plan from their materials, produced the song end to end, and managed its release.',
+    'project.youzhongyue.link': 'Watch on Bilibili',
+    'project.sichongzou.title': 'Quartet <span class="track-cn">《四重奏》</span>',
+    'project.sichongzou.meta': '2026.07 &middot; Luo Tianyi 14th Anniversary Album',
+    'project.sichongzou.desc': 'A commemorative album built around “four selves,” with eight new originals and four re-arranged classics, released worldwide on all major music platforms; 3M+ plays.',
+    'project.sichongzou.role': '<strong>Music Audio Post-production</strong>Handled audio editing and post-production for all 12 tracks and coordinated release assets for the worldwide launch.',
+    'project.sichongzou.link': 'Watch on Bilibili',
+    'project.yuesheqingxian.title': 'Moonlit Strings <span class="track-cn">《月色清弦》</span>',
+    'project.yuesheqingxian.meta': '2026.05 &middot; Mo Qingxian 8th Birthday Song',
+    'project.yuesheqingxian.desc': 'Virtual singer Mo Qingxian\'s official 2026 birthday song. Framed by a silent crescent moon, it sings of unspoken longing at the end of memory; 300K+ plays.',
+    'project.yuesheqingxian.role': '<strong>Music Supervision</strong>Supervised the song\'s production and quality from start to finish.',
+    'project.yuesheqingxian.link': 'Watch on Bilibili',
+    'project.tour.title': 'Luo Tianyi 2026 National Tour <span class="track-cn">「纯蓝幻乐」</span>',
+    'project.tour.meta': '2026.07 &ndash; 08 &middot; Beijing / Hangzhou / Chengdu / Shanghai / Changsha / Guangzhou',
+    'project.tour.desc': 'Luo Tianyi\'s 2026 “Infinite Resonance &middot; Pure Blue Fantasia” national tour, playing arenas in six cities and weaving local opera and folk songs into the show.',
+    'project.tour.role': '<strong>Music Audio Post-production &middot; Concert MC Recording</strong>Handled music audio post-production for the tour and recorded and tuned the virtual singer\'s MC voice lines.',
+    'project.tour.link': 'Watch on Bilibili',
+    'project.ciyuan.title': 'Ciyuan Kuangxi ACG Concert <span class="track-cn">《次元狂喜》</span>',
+    'project.ciyuan.meta': '2025.03 &middot; Yunmu Theater, Guangzhou',
+    'project.ciyuan.desc': 'An ACG anime-music concert: a cosplaying ensemble of young performers reimagines classics from <em>Demon Slayer</em>, <em>Naruto</em>, <em>Evangelion</em>, and more with a classical-meets-rock lineup.',
+    'project.ciyuan.role': '<strong>Original Music Producer &middot; Arrangement &middot; Mixing Desk</strong>Wrote and produced the original piece <em>Sparkling Love</em>, arranged several songs in the set, and ran multitrack recording and the mixing desk live.',
+    'project.ciyuan.link': 'Event details',
+    'project.role.label': 'My role',
+    'contact.title': 'Get in Touch',
+    'footer.top': 'Back to top',
+    'footer.copyright': '&copy; 2026 Shuoyu Huang. All rights reserved.',
   };
 
-  let currentLang = 'en';
+  const nodes = document.querySelectorAll('[data-i18n]');
+  const zh = { 'meta.title': document.title };
+  nodes.forEach(function (el) {
+    zh[el.getAttribute('data-i18n')] = el.innerHTML;
+  });
+  const translations = { zh: zh, en: en };
+
+  const toggle = document.getElementById('lang-toggle');
+  let currentLang = 'zh';
 
   function applyLang(lang) {
     const dict = translations[lang];
-    document.querySelectorAll('[data-i18n]').forEach(function (el) {
-      var key = el.getAttribute('data-i18n');
-      if (dict[key] !== undefined) {
-        el.innerHTML = dict[key];
-      }
+    nodes.forEach(function (el) {
+      const key = el.getAttribute('data-i18n');
+      if (dict[key] !== undefined) el.innerHTML = dict[key];
     });
-    document.documentElement.lang = lang;
+    document.title = dict['meta.title'];
+    document.documentElement.lang = lang === 'zh' ? 'zh-CN' : 'en';
+    // The button shows the language you can switch *to*.
+    toggle.textContent = lang === 'zh' ? 'EN' : '中文';
+    toggle.lang = lang === 'zh' ? 'en' : 'zh-CN';
+    toggle.setAttribute('aria-label', lang === 'zh' ? 'Switch to English' : '切换到中文');
     currentLang = lang;
   }
 
-  document.getElementById('lang-toggle').addEventListener('click', function () {
-    var newLang = currentLang === 'en' ? 'zh' : 'en';
-    applyLang(newLang);
+  toggle.addEventListener('click', function () {
+    applyLang(currentLang === 'zh' ? 'en' : 'zh');
   });
 })();
 
@@ -344,7 +257,7 @@
     }
   );
 
-  document.querySelectorAll('.track-card, .about-content p').forEach((el) => {
+  document.querySelectorAll('.reveal').forEach((el) => {
     observer.observe(el);
   });
 })();

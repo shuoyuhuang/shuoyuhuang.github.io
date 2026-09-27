@@ -3,3 +3,7 @@
 *.swo
 *~
 *.wav
+
+# Local scratch (source materials such as resumes; never publish)
+tmp/
+.claude/worktrees/
